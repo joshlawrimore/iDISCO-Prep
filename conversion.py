@@ -9,6 +9,8 @@ import zarr
 from ome_zarr.io import parse_url
 from ome_zarr.writer import write_image
 from tqdm import tqdm
+from matplotlib import pyplot as plt
+from skimage.transform import resize
 
 STACKS_ROOT: Path = Path(
     r"data/210810_45670_ko_female_LH_14-48-50_decon_2021-10-28_12-39-11"
@@ -52,14 +54,14 @@ write_image(
 root.attrs["omero"] = {
     "channels": [
         {
-            "color": "00FF00",
+            "color": "FFFFFF",
             "window": {
                 "start": int(min_value),
                 "end": int(max_value),
                 "min": 0,
                 "max": 65535,
             },
-            "label": "random",
+            "label": "C-FOS",
             "active": True,
         }
     ]
@@ -109,3 +111,57 @@ for missing_color in missing_colors:
 atlas_labels_dict = {"colors": colors_list}
 label_grp.attrs["image-label"] = atlas_labels_dict
 write_image(atlas_array, label_grp, axes="zyx")
+
+
+# add-in the thresholds
+# color maps
+def get_rgb_from_cmap(
+    cmap_name: str,
+    num_colors: int,
+    starting_value: float = 0,
+    ending_value: float = 1,
+) -> np.ndarray:
+    cmap = plt.get_cmap(cmap_name)
+    rgb_values = (
+        cmap(np.linspace(starting_value, ending_value, num_colors))[:, :3]
+        * 255
+    ).astype(int)
+    return rgb_values
+
+
+mask_generator = Path(
+    r"./data/210810_45670_ko_female_LH_14-48-50_decon_2021-10-28_12-39-11/640_FRST_seg"
+).glob("*.tif")
+sorted_mask_files = sorted(list(mask_generator))
+mask_color_values = get_rgb_from_cmap(
+    "inferno", len(sorted_mask_files), starting_value=0.7, ending_value=1
+)
+for mask_idx, mask_file in enumerate(sorted_mask_files):
+    threshold_value = int(mask_file.stem.split("_")[-1].lstrip("0"))
+    mask_name = f"FRSTseg {threshold_value}"
+    mask_grp = root.labels.create_group(mask_name)
+    with tf.TiffFile(mask_file) as mask_tif:
+        mask_y_dim, mask_x_dim = mask_tif.pages[0].shape
+        mask_z_dim = len(mask_tif.pages)
+        print("Making the mask dask array...")
+        mask_array = da.zeros(
+            (mask_z_dim, mask_y_dim, mask_x_dim), dtype=da.uint8
+        )
+        print("...done!")
+        print("Propagating mask array...")
+        for i, page in tqdm(enumerate(mask_tif.pages), total=mask_z_dim):
+            mask_array[i, :, :] = page.asarray()
+        mask_colors = {
+            "colors": [
+                {
+                    "label_value": 255,
+                    "rgba": mask_color_values[mask_idx].tolist() + [255],
+                }
+            ]
+        }
+        mask_grp.attrs["image-label"] = mask_colors
+        root["labels"].attrs["labels"] += [mask_name]
+        write_image(mask_array, mask_grp, axes="zyx")
+
+# heatmap section
+# due to contraints on OME-Zarr format, need to package separately
