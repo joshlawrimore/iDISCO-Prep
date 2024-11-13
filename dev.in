@@ -1,0 +1,9 @@
+mypy
+black
+flake8
+isort
+ipython
+napari[all]
+napari-ome-zarr
+
+-r ./requirements.in

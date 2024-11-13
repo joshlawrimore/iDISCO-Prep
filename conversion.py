@@ -10,7 +10,6 @@ from ome_zarr.io import parse_url
 from ome_zarr.writer import write_image
 from tqdm import tqdm
 from matplotlib import pyplot as plt
-from skimage.transform import resize
 
 STACKS_ROOT: Path = Path(
     r"data/210810_45670_ko_female_LH_14-48-50_decon_2021-10-28_12-39-11"
@@ -19,6 +18,10 @@ IMAGE_SUBDIR: Path = STACKS_ROOT.joinpath(r"640_N4")
 ATLAS_SUBDIR: Path = STACKS_ROOT.joinpath(r"atlaslabel_def_origspace")
 SEGMENTATION_SUBDIR: Path = STACKS_ROOT.joinpath(r"640_FRST_seg")
 STORE: Path = STACKS_ROOT.joinpath(STACKS_ROOT.name + ".zarr")
+HEATMAP_STORE: Path = STACKS_ROOT.joinpath(
+    STACKS_ROOT.name + "_heatmaps" + ".zarr"
+)
+HEATMAP_SUBDIR: Path = STACKS_ROOT.joinpath(r"heatmaps_atlasspace_corrected")
 ATLAS_COLOR_MAP: Path = Path(r"atlas_info_v3.csv")
 
 # Process the N4 deconned images as the primary images in the zarr directory
@@ -61,7 +64,7 @@ root.attrs["omero"] = {
                 "min": 0,
                 "max": 65535,
             },
-            "label": "C-FOS",
+            "label": "c-Fos",
             "active": True,
         }
     ]
@@ -165,3 +168,25 @@ for mask_idx, mask_file in enumerate(sorted_mask_files):
 
 # heatmap section
 # due to contraints on OME-Zarr format, need to package separately
+heatmap_store = parse_url(HEATMAP_STORE, mode="w").store
+heatmap_root = zarr.group(store=heatmap_store)
+heatmap_images: Generator = HEATMAP_SUBDIR.rglob("*.tif")
+sorted_heatmap_images: list = sorted(list(heatmap_images))
+with tf.TiffFile(sorted_heatmap_images[0]) as heatmap_tif:
+    heatmap_y_dim, heatmap_x_dim = heatmap_tif.pages[0].shape
+    heatmap_z_dim = len(heatmap_tif.pages)
+print("Creating the dask array...")
+heatmap_array = np.zeros(
+    (len(sorted_heatmap_images), heatmap_z_dim, heatmap_y_dim, heatmap_x_dim),
+    dtype=np.float32,
+)
+print("...done!")
+for thresh_idx, heatmap_image in enumerate(sorted_heatmap_images):
+    with tf.TiffFile(heatmap_image) as heatmap_tif:
+        heatmap_y_dim, heatmap_x_dim = heatmap_tif.pages[0].shape
+        heatmap_z_dim = len(heatmap_tif.pages)
+        for i, page in tqdm(enumerate(heatmap_tif.pages), total=heatmap_z_dim):
+            heatmap_array[thresh_idx, i, :, :] = page.asarray()
+scaler: np.float32 = np.float32(65535) / heatmap_array.max().item()
+heatmap_scaled_array = np.round((heatmap_array * scaler)).astype(np.uint16)
+write_image(image=heatmap_scaled_array, group=heatmap_root, axes="czyx")
