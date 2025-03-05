@@ -6,6 +6,13 @@ import pandas as pd
 
 KO_DIR: Path = Path("./final/KO")
 FLOXED_DIR: Path = Path("./final/FLOX")
+DERVIATIVE_SUBDIRS: list[str] = [
+    "640_N4",
+    "atlaslabel_def_origspace",
+    "640_FRST",
+    "640_FRST_seg",
+    "heatmaps_atlasspace"
+]
 
 def parse_directories(path: Path) -> pd.DataFrame:
     dir_dicts: list[dict] = []
@@ -13,7 +20,29 @@ def parse_directories(path: Path) -> pd.DataFrame:
     for dir_path in path.iterdir():
         if not dir_path.is_dir():
             continue
-            
+        found_subdirs = True
+        all_subdirs: list[Path] = []
+        for subdir_name in DERVIATIVE_SUBDIRS:
+            found_this_subdir = False
+            for subdir in dir_path.rglob(subdir_name):
+                if subdir.is_dir():
+                    found_this_subdir = True
+                    subdir_corrected = subdir.parent.joinpath(subdir.name + "_corrected")
+                    subdir_corr = subdir.parent.joinpath(subdir.name + "_corr")
+                    subdir_masked = subdir.parent.joinpath(subdir.name + "_masked")
+                    subdir_hemisphere = subdir.parent.joinpath(subdir.name + "_hemisphere")
+                    extended_subdir_list = [subdir_corrected, subdir_corr, subdir_masked, subdir_hemisphere]
+                    for extended_subdir in extended_subdir_list:
+                        if extended_subdir.exists():
+                            print(f"Found {extended_subdir} in {dir_path}")
+                            all_subdirs.append(extended_subdir)
+                    break
+            if not found_this_subdir:
+                print(f"Warning: Directory {dir_path} does not contain '{subdir_name}' subdirectory anywhere in its tree")
+                found_subdirs = False
+        if not found_subdirs:
+            print(f"Skipping {dir_path} due to missing required subdirectories...")
+            continue
         dir_dict: dict = {
             "species": "mus musculus",
             "sample_type": "tissue"
