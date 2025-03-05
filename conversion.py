@@ -2,14 +2,14 @@ from pathlib import Path
 from typing import Generator
 
 import dask.array as da
-import pandas as pd
 import numpy as np
+import pandas as pd
 import tifffile as tf
 import zarr
+from matplotlib import pyplot as plt
 from ome_zarr.io import parse_url
 from ome_zarr.writer import write_image
 from tqdm import tqdm
-from matplotlib import pyplot as plt
 
 STACKS_ROOT: Path = Path(
     r"data/210810_45670_ko_female_LH_14-48-50_decon_2021-10-28_12-39-11"
