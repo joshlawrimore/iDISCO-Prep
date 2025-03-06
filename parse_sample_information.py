@@ -164,4 +164,4 @@ if __name__ == "__main__":
     df.to_csv("all_sample_information.tsv", sep="\t", index=False)
     participants_df.to_csv("participants.tsv", sep="\t", index=False)
     sample_df.to_csv("samples.tsv", sep="\t", index=False)
-    create_bids(Path("./test_bids"), df)
+    create_bids(Path("./final/test_bids"), df)
