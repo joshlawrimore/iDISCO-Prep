@@ -13,3 +13,11 @@ These are the steps I took to convert the TIFFs to OME-TIFFs.
 3. Add OME-XML to the existing TIFF stacks in 640_FRST_seg folders and remove the csvs.
 4. Add sidecar.json file to the subject level derivatives folders.
 5. Change names of the subject to remove the '-' so it is `123456ko` instead of `123456-ko`.
+
+
+### Follow up questions
+
+What is the difference between the 640_FRST_seg and 640_FRST_seg_corr? Only CSVs in the 640_FRST_seg_corr folder.
+See `/home/lawrimorejg/repos/iDISCO-Prep/final/FLOX/_45925_LH_flox_20211029/210816_45925_floxed_female_LH_16-09-53_decon_2021-10-29_16-57-17/640_FRST_seg_corr` vs `/home/lawrimorejg/repos/iDISCO-Prep/final/FLOX/_45925_LH_flox_20211029/210816_45925_floxed_female_LH_16-09-53_decon_2021-10-29_16-57-17/640_FRST_seg`
+
+There are two samples with heatmaps_atlasspace_corrected subfolders. These contain tif files. What is the difference between the heatmaps_atlasspace and heatmaps_atlasspace_corrected?

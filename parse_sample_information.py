@@ -128,7 +128,7 @@ def process_paths(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 
-def create_bids(root_dir: Path, df: pd.DataFrame, dry_run: bool = False) -> None:
+def create_bids(root_dir: Path, df: pd.DataFrame, dry_run: bool = False, force_overwrite: bool = False) -> None:
     root_dir.mkdir(parents=True, exist_ok=True)
     derivatives_dir: Path = root_dir.joinpath("derivatives")
     derivatives_dir.mkdir(parents=True, exist_ok=True)
@@ -142,6 +142,17 @@ def create_bids(root_dir: Path, df: pd.DataFrame, dry_run: bool = False) -> None
         "BodyPart": "BRAIN",
         "Description": "Deconvolved and N4 corrected image stack from the lightsheet microscope"
     }
+    downsampled_dict: dict = {
+        "PixelSize": [
+            25.0,
+            25.0,
+            25.0
+        ],
+        "PixelSizeUnits": "um",
+        "BodyPart": "BRAIN",
+        "Description": "Downsampled heatmaps of c-Fos"
+    }
+
     with open(root_dir.joinpath("SPIM.json"), "w") as f:
         json.dump(root_dict, f)
     
@@ -163,66 +174,109 @@ def create_bids(root_dir: Path, df: pd.DataFrame, dry_run: bool = False) -> None
             micro_dir: Path = subject_dir.joinpath("micr")
             micro_dir.mkdir(parents=True, exist_ok=True)
             filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
-            aggregate_tiffs_to_ome(row["640_N4"], filepath_bft, max_workers=16, dry_run=dry_run)
+            if not filepath_bft.exists() or force_overwrite:
+                aggregate_tiffs_to_ome(row["640_N4"], filepath_bft, max_workers=16, dry_run=dry_run)
+            else:
+                print(f"Skipping {filepath_bft} because it already exists")
         if row["640_FRST"] is not None:
             frst_dir: Path = derivatives_dir.joinpath("FastRadialSymmetryTransform")
             frst_dir.mkdir(parents=True, exist_ok=True)
             frst_json: Path = frst_dir.joinpath("SPIM.json")
+            frst_dict: dict = root_dict.copy()
+            frst_dict["Description"] = "Fast radial symmetry transform of the" \
+                + " deconvolved and N4 corrected image stack from the lightsheet microscope"
             if not frst_json.exists():
                 with open(frst_json, "w") as f:
-                    json.dump(root_dict, f)
+                    json.dump(frst_dict, f)
             subject_dir: Path = frst_dir.joinpath(row["participant_id"])
             subject_dir.mkdir(parents=True, exist_ok=True)
             micro_dir: Path = subject_dir.joinpath("micr")
             micro_dir.mkdir(parents=True, exist_ok=True)
             filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
-            aggregate_tiffs_to_ome(row["640_FRST"], filepath_bft, max_workers=16, dry_run=dry_run)
+            if not filepath_bft.exists() or force_overwrite:
+                aggregate_tiffs_to_ome(row["640_FRST"], filepath_bft, max_workers=16, dry_run=dry_run)
+            else:
+                print(f"Skipping {filepath_bft} because it already exists")
         if row["640_FRST_hemisphere"] is not None:
             frst_hemisphere_dir: Path = derivatives_dir.joinpath("FastRadialSymmetryTransformHemisphere")
             frst_hemisphere_dir.mkdir(parents=True, exist_ok=True)
             frst_hemisphere_json: Path = frst_hemisphere_dir.joinpath("SPIM.json")
+            frst_hemisphere_dict: dict = root_dict.copy()
+            frst_hemisphere_dict["Description"] = "Fast radial symmetry transform of the" \
+                + " deconvolved and N4 corrected image stack from the lightsheet microscope" \
+                + " for the indicated hemisphere"
             if not frst_hemisphere_json.exists():
                 with open(frst_hemisphere_json, "w") as f:
-                    json.dump(root_dict, f)
+                    json.dump(frst_hemisphere_dict, f)
             subject_dir: Path = frst_hemisphere_dir.joinpath(row["participant_id"])
             subject_dir.mkdir(parents=True, exist_ok=True)
             micro_dir: Path = subject_dir.joinpath("micr")
             micro_dir.mkdir(parents=True, exist_ok=True)
             filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
-            aggregate_tiffs_to_ome(row["640_FRST_hemisphere"], filepath_bft, max_workers=16, dry_run=dry_run)
+            if not filepath_bft.exists() or force_overwrite:
+                aggregate_tiffs_to_ome(row["640_FRST_hemisphere"], filepath_bft, max_workers=16, dry_run=dry_run)
+            else:
+                print(f"Skipping {filepath_bft} because it already exists")
         if row["atlaslabel_def_origspace"] is not None:
             atlaslabel_dir: Path = derivatives_dir.joinpath("AtlasLabel")
             atlaslabel_dir.mkdir(parents=True, exist_ok=True)
+            dseg_dict: dict = {"Manual": "false"}
+            dseg_json: Path = atlaslabel_dir.joinpath("dseg.ome.json")
+            if not dseg_json.exists():
+                with open(dseg_json, "w") as f:
+                    json.dump(dseg_dict, f)
             atlaslabel_json: Path = atlaslabel_dir.joinpath("SPIM.json")
+            atlaslabel_dict: dict = root_dict.copy()
+            atlaslabel_dict["Description"] = "Allen Brain Atlas mapped labels of the" \
+                + " deconvolved and N4 corrected image stack from the lightsheet microscope"
             if not atlaslabel_json.exists():
                 with open(atlaslabel_json, "w") as f:
-                    json.dump(root_dict, f)
+                    json.dump(atlaslabel_dict, f)
             subject_dir: Path = atlaslabel_dir.joinpath(row["participant_id"])
             subject_dir.mkdir(parents=True, exist_ok=True)
             micro_dir: Path = subject_dir.joinpath("micr")
             micro_dir.mkdir(parents=True, exist_ok=True)
-            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
-            aggregate_tiffs_to_ome(row["atlaslabel_def_origspace"], filepath_bft, max_workers=16, dry_run=dry_run)
+            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_space-orig_dseg.ome.btf")
+            if not filepath_bft.exists() or force_overwrite:
+                aggregate_tiffs_to_ome(row["atlaslabel_def_origspace"], filepath_bft, max_workers=16, dry_run=dry_run)
+            else:
+                print(f"Skipping {filepath_bft} because it already exists")
         if row["atlaslabel_def_origspace_masked"] is not None:
             atlaslabel_masked_dir: Path = derivatives_dir.joinpath("AtlasLabelMasked")
             atlaslabel_masked_dir.mkdir(parents=True, exist_ok=True)
+            dseg_dict: dict = {"Manual": "false"}
+            dseg_json: Path = atlaslabel_masked_dir.joinpath("dseg.ome.json")
+            if not dseg_json.exists():
+                with open(dseg_json, "w") as f:
+                    json.dump(dseg_dict, f)
             atlaslabel_masked_json: Path = atlaslabel_masked_dir.joinpath("SPIM.json")
+            atlaslabel_masked_dict: dict = root_dict.copy()
+            atlaslabel_masked_dict["Description"] = "Allen Brain Atlas mapped labels of the" \
+                + " deconvolved and N4 corrected image stack from the lightsheet microscope" \
+                + " with regions outside the hemisphere masked"
             if not atlaslabel_masked_json.exists():
                 with open(atlaslabel_masked_json, "w") as f:
-                    json.dump(root_dict, f)
+                    json.dump(atlaslabel_masked_dict, f)
             subject_dir: Path = atlaslabel_masked_dir.joinpath(row["participant_id"])
             subject_dir.mkdir(parents=True, exist_ok=True)
             micro_dir: Path = subject_dir.joinpath("micr")
             micro_dir.mkdir(parents=True, exist_ok=True)
-            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
-            aggregate_tiffs_to_ome(row["atlaslabel_def_origspace_masked"], filepath_bft, max_workers=16, dry_run=dry_run)
+            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_space-orig_dseg.ome.btf")
+            if not filepath_bft.exists() or force_overwrite:
+                aggregate_tiffs_to_ome(row["atlaslabel_def_origspace_masked"], filepath_bft, max_workers=16, dry_run=dry_run)
+            else:
+                print(f"Skipping {filepath_bft} because it already exists")
         if row["640_FRST_seg"] is not None:
             frst_seg_dir: Path = derivatives_dir.joinpath("FastRadialSymmetryTransformSegmentation")
             frst_seg_dir.mkdir(parents=True, exist_ok=True)
             frst_seg_json: Path = frst_seg_dir.joinpath("SPIM.json")
+            frst_seg_dict: dict = root_dict.copy()
+            frst_seg_dict["Description"] = "Binary segmentation masks of the" \
+                + " fast radial symmetry transform of the" \
+                + " deconvolved and N4 corrected image stack from the lightsheet microscope at various thresholds"
             if not frst_seg_json.exists():
                 with open(frst_seg_json, "w") as f:
-                    json.dump(root_dict, f)
+                    json.dump(frst_seg_dict, f)
             subject_dir: Path = frst_seg_dir.joinpath(row["participant_id"])
             subject_dir.mkdir(parents=True, exist_ok=True)
             micro_dir: Path = subject_dir.joinpath("micr")
@@ -232,9 +286,59 @@ def create_bids(root_dir: Path, df: pd.DataFrame, dry_run: bool = False) -> None
             for tif in frst_seg_tifs:
                 acq_string: str = tif.stem.split("_")[-1]
                 filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_acq-{acq_string}_SPIM.ome.btf")
-                add_ome_metadata(tif, filepath_bft, "original", dry_run=dry_run)
+                if not filepath_bft.exists() or force_overwrite:
+                    add_ome_metadata(tif, filepath_bft, "original", dry_run=dry_run)
+                else:
+                    print(f"Skipping {filepath_bft} because it already exists")
+        if row["heatmaps_atlasspace"] is not None:
+            heatmaps_dir: Path = derivatives_dir.joinpath("HeatmapsAtlasSpace")
+            heatmaps_dir.mkdir(parents=True, exist_ok=True)
+            heatmaps_json: Path = heatmaps_dir.joinpath("res-25um_SPIM.json")
+            heatmaps_dict: dict = downsampled_dict.copy()
+            if not heatmaps_json.exists():
+                with open(heatmaps_json, 'w') as f:
+                    json.dump(heatmaps_dict, f)
+            subject_dir: Path = heatmaps_dir.joinpath(row["participant_id"])
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            micro_dir: Path = subject_dir.joinpath("micr")
+            micro_dir.mkdir(parents=True, exist_ok=True)
+            heatmaps_tifs: Generator[Path, None, None] = row["heatmaps_atlasspace"].glob("*.tif")
+            for tif in heatmaps_tifs:
+                acq_string: str = tif.stem.split("_")[-1]
+                filepath_bft: Path = micro_dir.joinpath(
+                    f"{row['participant_id']}_{row['sample_id']}_acq-{acq_string}_res-25um_SPIM.ome.btf"
+                )
+                if not filepath_bft.exists() or force_overwrite:
+                    add_ome_metadata(tif, filepath_bft, "original", dry_run=dry_run)
+                else:
+                    print(f"Skipping {filepath_bft} because it already exists")
+        if row["heatmaps_atlasspace_corrected"] is not None:
+            heatmaps_corrected_dir: Path = derivatives_dir.joinpath("HeatmapsAtlasSpaceCorrected")
+            heatmaps_corrected_dir.mkdir(parents=True, exist_ok=True)
+            heatmaps_corrected_json: Path = heatmaps_corrected_dir.joinpath("res-25um_SPIM.json")
+            heatmaps_corrected_dict: dict = downsampled_dict.copy()
+            if not heatmaps_corrected_json.exists():
+                with open(heatmaps_corrected_json, 'w') as f:
+                    json.dump(heatmaps_corrected_dict, f)
+            subject_dir: Path = heatmaps_corrected_dir.joinpath(row["participant_id"])
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            micro_dir: Path = subject_dir.joinpath("micr")
+            micro_dir.mkdir(parents=True, exist_ok=True)
+            heatmaps_corrected_tifs: Generator[Path, None, None] = row["heatmaps_atlasspace_corrected"].glob("*.tif")
+            for tif in heatmaps_corrected_tifs:
+                acq_string: str = tif.stem.split("_")[-1]
+                filepath_bft: Path = micro_dir.joinpath(
+                    f"{row['participant_id']}_{row['sample_id']}_acq-{acq_string}_res-25um_SPIM.ome.btf"
+                )
+                if not filepath_bft.exists() or force_overwrite:
+                    add_ome_metadata(tif, filepath_bft, "original", dry_run=dry_run)
+                else:
+                    print(f"Skipping {filepath_bft} because it already exists")
+
+
 
 if __name__ == "__main__":
+    ROOT_DIR.mkdir(parents=True, exist_ok=True)
     df = combine_sample_info()
     df = process_paths(df)
     participants_df = df[
@@ -246,7 +350,9 @@ if __name__ == "__main__":
     df.to_csv("all_sample_information.tsv", sep="\t", index=False)
     participants_df.to_csv(ROOT_DIR.joinpath("participants.tsv"), sep="\t", index=False)
     sample_df.to_csv(ROOT_DIR.joinpath("samples.tsv"), sep="\t", index=False)
-    create_bids(ROOT_DIR, df, dry_run=True)
+    create_bids(ROOT_DIR, df, dry_run=True, force_overwrite=True)
     copy2("./LICENSE", ROOT_DIR.joinpath("LICENSE"))
     copy2("./data_README.md", ROOT_DIR.joinpath("README.md"))
     copy2("./dataset_description.json", ROOT_DIR.joinpath("dataset_description.json"))
+    copy2("./dseg.tsv", ROOT_DIR.joinpath("derivatives/AtlasLabel/dseg.tsv"))
+    copy2("./dseg.tsv", ROOT_DIR.joinpath("derivatives/AtlasLabelMasked/dseg.tsv"))
