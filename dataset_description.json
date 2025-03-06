@@ -1,0 +1,25 @@
+{
+    "Name": "Heatmap",
+    "BIDSVersion": "1.10.0",
+    "DatasetType": "derivative",
+    "Authors": [
+        "Dana Bakalar",
+        "Oskana Gavrilova",
+        "Sunny Z Jiang",
+        "Hai-Ying Zhang",
+        "Snehashis Roy",
+        "Sarah K Williams",
+        "Naili Liu",
+        "Stephen Wisser",
+        "Ted B Usdin",
+        "Lee E Eiden"
+    ],
+    "License": "CC0",
+    "GeneratedBy": [
+        {
+            "Name": "CATNIP",
+            "Description": "CATNIP (Cell Analysis Tool for Nuclear Image Processing) is a pipeline for analyzing cleared mouse brain images from Lightsheet microscopes. It processes large-scale (TB) images through three main steps: 1) Registration to Allen Brain Atlas with downsampling and N4 intensity correction, 2) Cell segmentation using fast radial symmetry transform, and 3) Generation of cell count statistics and heatmaps across brain regions.",
+            "CodeURL": "https://github.com/snehashis-roy/CATNIP"
+        }
+    ]
+}

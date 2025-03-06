@@ -2,9 +2,11 @@ from pathlib import Path
 from aggregate_ome_tiffs import aggregate_tiffs_to_ome
 from add_ome_to_tiffs import add_ome_metadata
 from tqdm import tqdm
+import json
 import re
+from shutil import copy2
 import pandas as pd
-
+from typing import Generator
 KO_DIR: Path = Path("./final/KO")
 FLOXED_DIR: Path = Path("./final/FLOX")
 DERVIATIVE_SUBDIRS: list[str] = [
@@ -14,6 +16,7 @@ DERVIATIVE_SUBDIRS: list[str] = [
     "640_FRST_seg",
     "heatmaps_atlasspace",
 ]
+ROOT_DIR: Path = Path("./final/test_bids")
 
 
 def parse_directories(path: Path) -> pd.DataFrame:
@@ -125,10 +128,23 @@ def process_paths(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 
-def create_bids(root_dir: Path, df: pd.DataFrame) -> None:
+def create_bids(root_dir: Path, df: pd.DataFrame, dry_run: bool = False) -> None:
     root_dir.mkdir(parents=True, exist_ok=True)
     derivatives_dir: Path = root_dir.joinpath("derivatives")
     derivatives_dir.mkdir(parents=True, exist_ok=True)
+    root_dict: dict = {
+        "PixelSize": [
+            3.7,
+            3.7,
+            5.0
+        ],
+        "PixelSizeUnits": "um",
+        "BodyPart": "BRAIN",
+        "Description": "Deconvolved and N4 corrected image stack from the lightsheet microscope"
+    }
+    with open(root_dir.joinpath("SPIM.json"), "w") as f:
+        json.dump(root_dict, f)
+    
     # Just going to iterate over the rows manually for now
     # dir_types: list[str] = df.columns.drop(
     #     [
@@ -142,15 +158,81 @@ def create_bids(root_dir: Path, df: pd.DataFrame) -> None:
     # )
     for _, row in df.iterrows():
         if row["640_N4"] is not None:
-            subject_dir: Path = derivatives_dir.joinpath(row["participant_id"])
+            subject_dir: Path = root_dir.joinpath(row["participant_id"])
             subject_dir.mkdir(parents=True, exist_ok=True)
             micro_dir: Path = subject_dir.joinpath("micr")
             micro_dir.mkdir(parents=True, exist_ok=True)
             filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
-            aggregate_tiffs_to_ome(row["640_N4"], filepath_bft, max_workers=16)
-
-            
-
+            aggregate_tiffs_to_ome(row["640_N4"], filepath_bft, max_workers=16, dry_run=dry_run)
+        if row["640_FRST"] is not None:
+            frst_dir: Path = derivatives_dir.joinpath("FastRadialSymmetryTransform")
+            frst_dir.mkdir(parents=True, exist_ok=True)
+            frst_json: Path = frst_dir.joinpath("SPIM.json")
+            if not frst_json.exists():
+                with open(frst_json, "w") as f:
+                    json.dump(root_dict, f)
+            subject_dir: Path = frst_dir.joinpath(row["participant_id"])
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            micro_dir: Path = subject_dir.joinpath("micr")
+            micro_dir.mkdir(parents=True, exist_ok=True)
+            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
+            aggregate_tiffs_to_ome(row["640_FRST"], filepath_bft, max_workers=16, dry_run=dry_run)
+        if row["640_FRST_hemisphere"] is not None:
+            frst_hemisphere_dir: Path = derivatives_dir.joinpath("FastRadialSymmetryTransformHemisphere")
+            frst_hemisphere_dir.mkdir(parents=True, exist_ok=True)
+            frst_hemisphere_json: Path = frst_hemisphere_dir.joinpath("SPIM.json")
+            if not frst_hemisphere_json.exists():
+                with open(frst_hemisphere_json, "w") as f:
+                    json.dump(root_dict, f)
+            subject_dir: Path = frst_hemisphere_dir.joinpath(row["participant_id"])
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            micro_dir: Path = subject_dir.joinpath("micr")
+            micro_dir.mkdir(parents=True, exist_ok=True)
+            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
+            aggregate_tiffs_to_ome(row["640_FRST_hemisphere"], filepath_bft, max_workers=16, dry_run=dry_run)
+        if row["atlaslabel_def_origspace"] is not None:
+            atlaslabel_dir: Path = derivatives_dir.joinpath("AtlasLabel")
+            atlaslabel_dir.mkdir(parents=True, exist_ok=True)
+            atlaslabel_json: Path = atlaslabel_dir.joinpath("SPIM.json")
+            if not atlaslabel_json.exists():
+                with open(atlaslabel_json, "w") as f:
+                    json.dump(root_dict, f)
+            subject_dir: Path = atlaslabel_dir.joinpath(row["participant_id"])
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            micro_dir: Path = subject_dir.joinpath("micr")
+            micro_dir.mkdir(parents=True, exist_ok=True)
+            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
+            aggregate_tiffs_to_ome(row["atlaslabel_def_origspace"], filepath_bft, max_workers=16, dry_run=dry_run)
+        if row["atlaslabel_def_origspace_masked"] is not None:
+            atlaslabel_masked_dir: Path = derivatives_dir.joinpath("AtlasLabelMasked")
+            atlaslabel_masked_dir.mkdir(parents=True, exist_ok=True)
+            atlaslabel_masked_json: Path = atlaslabel_masked_dir.joinpath("SPIM.json")
+            if not atlaslabel_masked_json.exists():
+                with open(atlaslabel_masked_json, "w") as f:
+                    json.dump(root_dict, f)
+            subject_dir: Path = atlaslabel_masked_dir.joinpath(row["participant_id"])
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            micro_dir: Path = subject_dir.joinpath("micr")
+            micro_dir.mkdir(parents=True, exist_ok=True)
+            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
+            aggregate_tiffs_to_ome(row["atlaslabel_def_origspace_masked"], filepath_bft, max_workers=16, dry_run=dry_run)
+        if row["640_FRST_seg"] is not None:
+            frst_seg_dir: Path = derivatives_dir.joinpath("FastRadialSymmetryTransformSegmentation")
+            frst_seg_dir.mkdir(parents=True, exist_ok=True)
+            frst_seg_json: Path = frst_seg_dir.joinpath("SPIM.json")
+            if not frst_seg_json.exists():
+                with open(frst_seg_json, "w") as f:
+                    json.dump(root_dict, f)
+            subject_dir: Path = frst_seg_dir.joinpath(row["participant_id"])
+            subject_dir.mkdir(parents=True, exist_ok=True)
+            micro_dir: Path = subject_dir.joinpath("micr")
+            micro_dir.mkdir(parents=True, exist_ok=True)
+            # TODO: iterate over all the existing tiff stacks
+            frst_seg_tifs: Generator[Path, None, None] = row["640_FRST_seg"].glob("*.tif")
+            for tif in frst_seg_tifs:
+                acq_string: str = tif.stem.split("_")[-1]
+                filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_acq-{acq_string}_SPIM.ome.btf")
+                add_ome_metadata(tif, filepath_bft, "original", dry_run=dry_run)
 
 if __name__ == "__main__":
     df = combine_sample_info()
@@ -162,6 +244,9 @@ if __name__ == "__main__":
         ["sample_id", "participant_id", "sample_type", "pathology"]
     ].sort_values(by=["pathology", "participant_id"])
     df.to_csv("all_sample_information.tsv", sep="\t", index=False)
-    participants_df.to_csv("participants.tsv", sep="\t", index=False)
-    sample_df.to_csv("samples.tsv", sep="\t", index=False)
-    create_bids(Path("./final/test_bids"), df)
+    participants_df.to_csv(ROOT_DIR.joinpath("participants.tsv"), sep="\t", index=False)
+    sample_df.to_csv(ROOT_DIR.joinpath("samples.tsv"), sep="\t", index=False)
+    create_bids(ROOT_DIR, df, dry_run=True)
+    copy2("./LICENSE", ROOT_DIR.joinpath("LICENSE"))
+    copy2("./data_README.md", ROOT_DIR.joinpath("README.md"))
+    copy2("./dataset_description.json", ROOT_DIR.joinpath("dataset_description.json"))
