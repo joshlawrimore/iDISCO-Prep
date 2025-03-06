@@ -1,6 +1,7 @@
 from pathlib import Path
-
-
+from aggregate_ome_tiffs import aggregate_tiffs_to_ome
+from add_ome_to_tiffs import add_ome_metadata
+from tqdm import tqdm
 import re
 import pandas as pd
 
@@ -128,21 +129,27 @@ def create_bids(root_dir: Path, df: pd.DataFrame) -> None:
     root_dir.mkdir(parents=True, exist_ok=True)
     derivatives_dir: Path = root_dir.joinpath("derivatives")
     derivatives_dir.mkdir(parents=True, exist_ok=True)
-    dir_types: list[str] = df.columns.drop(
-        [
-            "participant_id",
-            "sample_id",
-            "species",
-            "strain",
-            "pathology",
-            "sample_type",
-        ]
-    )
+    # Just going to iterate over the rows manually for now
+    # dir_types: list[str] = df.columns.drop(
+    #     [
+    #         "participant_id",
+    #         "sample_id",
+    #         "species",
+    #         "strain",
+    #         "pathology",
+    #         "sample_type",
+    #     ]
+    # )
     for _, row in df.iterrows():
         if row["640_N4"] is not None:
             subject_dir: Path = derivatives_dir.joinpath(row["participant_id"])
             subject_dir.mkdir(parents=True, exist_ok=True)
             micro_dir: Path = subject_dir.joinpath("micr")
+            micro_dir.mkdir(parents=True, exist_ok=True)
+            filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
+            aggregate_tiffs_to_ome(row["640_N4"], filepath_bft)
+
+            
 
 
 if __name__ == "__main__":
@@ -157,3 +164,4 @@ if __name__ == "__main__":
     df.to_csv("all_sample_information.tsv", sep="\t", index=False)
     participants_df.to_csv("participants.tsv", sep="\t", index=False)
     sample_df.to_csv("samples.tsv", sep="\t", index=False)
+    create_bids(Path("./test_bids"), df)

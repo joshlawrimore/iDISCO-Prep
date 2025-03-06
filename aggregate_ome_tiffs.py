@@ -1,9 +1,10 @@
 from pathlib import Path
 import numpy as np
 import tifffile
+from tqdm import tqdm
 
 
-def aggregate_tiffs_to_ome(input_dir, output_path, pattern="*.tif"):
+def aggregate_tiffs_to_ome(input_dir, output_path, pattern="*.tif", max_workers=16):
     """
     Aggregate single-plane TIFF files into a single OME-TIFF file.
 
@@ -15,6 +16,8 @@ def aggregate_tiffs_to_ome(input_dir, output_path, pattern="*.tif"):
         Path where the output OME-TIFF will be saved
     pattern : str, optional
         Glob pattern to match the TIFF files (default: "*.tif")
+    max_workers : int, optional
+        Maximum number of worker threads (default: 16)
     """
     # Get list of all TIFF files in the directory
     input_path = Path(input_dir)
@@ -35,7 +38,7 @@ def aggregate_tiffs_to_ome(input_dir, output_path, pattern="*.tif"):
 
     # Read all images into the stack
     print(f"Reading {depth} TIFF files...")
-    for i, tiff_file in enumerate(tiff_files):
+    for i, tiff_file in tqdm(enumerate(tiff_files), total=depth):
         stack[i] = tifffile.imread(tiff_file)
 
     # Save as OME-TIFF
@@ -56,6 +59,7 @@ def aggregate_tiffs_to_ome(input_dir, output_path, pattern="*.tif"):
             "PhysicalSizeY": 3.7,
         },
         compression="ADOBE_DEFLATE",
+        maxworkers=max_workers
     )
     print("Done!")
 
@@ -75,7 +79,13 @@ if __name__ == "__main__":
         default="*.tif",
         help="Glob pattern to match TIFF files (default: *.tif)",
     )
+    parser.add_argument(
+        "--max_workers",
+        type=int,
+        default=16,
+        help="Maximum number of worker threads (default: 16)",
+    )
 
     args = parser.parse_args()
 
-    aggregate_tiffs_to_ome(args.input_dir, args.output_path, args.pattern)
+    aggregate_tiffs_to_ome(args.input_dir, args.output_path, args.pattern, args.max_workers)
