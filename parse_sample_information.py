@@ -147,7 +147,7 @@ def create_bids(root_dir: Path, df: pd.DataFrame) -> None:
             micro_dir: Path = subject_dir.joinpath("micr")
             micro_dir.mkdir(parents=True, exist_ok=True)
             filepath_bft: Path = micro_dir.joinpath(f"{row['participant_id']}_{row['sample_id']}_SPIM.ome.btf")
-            aggregate_tiffs_to_ome(row["640_N4"], filepath_bft)
+            aggregate_tiffs_to_ome(row["640_N4"], filepath_bft, max_workers=16)
 
             
 
