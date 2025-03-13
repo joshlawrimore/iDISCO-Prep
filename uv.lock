@@ -579,7 +579,7 @@ wheels = [
 
 [[package]]
 name = "dandi"
-version = "0.67.0"
+version = "0.67.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bidsschematools" },
@@ -612,9 +612,9 @@ dependencies = [
     { name = "zarr" },
     { name = "zarr-checksum" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4c/f6/648fca4e75c358e96aa38a3354e8670c9bd38f960d7a889eca8aaf762bbb/dandi-0.67.0.tar.gz", hash = "sha256:43158310123f8ff2ec304d9327bc65e8a6e801cf9ed3c8ea7e7c79dc341330f1", size = 319297 }
+sdist = { url = "https://files.pythonhosted.org/packages/47/fa/862c104774d9987f28b6fb91ad6dd55397718f57ce3ae5fd4f0d2d145704/dandi-0.67.2.tar.gz", hash = "sha256:b82dd45f4ba69c97652367ee1bdce29eaa7f84322677350a625b6bf8222a08aa", size = 319566 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/aa/728149ebb694effde7a92e3f5b7fddf7315b0bb1bd6c14235cdf3e14b997/dandi-0.67.0-py3-none-any.whl", hash = "sha256:8c45bc071718a68016baba2865a6a267df8c65e962bf3d2f63c8cb576400f3a3", size = 313368 },
+    { url = "https://files.pythonhosted.org/packages/b8/5b/242698484b61df1f2310a63e157853b001dd1b6a4fd3e944b01bc94fbad8/dandi-0.67.2-py3-none-any.whl", hash = "sha256:5ebbf91ab701b25cef54317fc9943dbabfa7b815d7c26d2a7dd8e23d863a7daa", size = 313477 },
 ]
 
 [[package]]
@@ -1083,7 +1083,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "dandi", specifier = ">=0.67.0" },
+    { name = "dandi", specifier = ">=0.67.2" },
     { name = "dask", specifier = ">=2024.12.1" },
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "napari", extras = ["all"], specifier = ">=0.5.5" },
@@ -1139,7 +1139,7 @@ name = "importlib-metadata"
 version = "8.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp" },
+    { name = "zipp", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/08/c1395a292bb23fd03bdf572a1357c5a733d3eecbab877641ceacab23db6e/importlib_metadata-8.6.1.tar.gz", hash = "sha256:310b41d755445d74569f993ccfc22838295d9fe005425094fad953d7f15c8580", size = 55767 }
 wheels = [
