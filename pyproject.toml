@@ -5,6 +5,7 @@ description = "Convert derivative tiff stacks from iDISCO analysis to ome-zarr"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "dandi>=0.67.0",
     "dask>=2024.12.1",
     "matplotlib>=3.10.0",
     "napari-ome-zarr>=0.6.1",

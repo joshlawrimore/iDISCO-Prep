@@ -16,7 +16,7 @@ DERVIATIVE_SUBDIRS: list[str] = [
     "640_FRST_seg",
     "heatmaps_atlasspace",
 ]
-ROOT_DIR: Path = Path("./final/test_bids")
+ROOT_DIR: Path = Path("./final/bakalar_catnip")
 
 
 def parse_directories(path: Path) -> pd.DataFrame:
@@ -350,7 +350,7 @@ if __name__ == "__main__":
     df.to_csv("all_sample_information.tsv", sep="\t", index=False)
     participants_df.to_csv(ROOT_DIR.joinpath("participants.tsv"), sep="\t", index=False)
     sample_df.to_csv(ROOT_DIR.joinpath("samples.tsv"), sep="\t", index=False)
-    create_bids(ROOT_DIR, df, dry_run=True, force_overwrite=True)
+    create_bids(ROOT_DIR, df, dry_run=False, force_overwrite=True)
     copy2("./LICENSE", ROOT_DIR.joinpath("LICENSE"))
     copy2("./data_README.md", ROOT_DIR.joinpath("README.md"))
     copy2("./dataset_description.json", ROOT_DIR.joinpath("dataset_description.json"))
